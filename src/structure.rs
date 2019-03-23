@@ -3,19 +3,18 @@
 // TODO: sort file to Network::Node::Link
 //----------------------------------------------------------
 
-struct Network {
+pub struct Network {
     dimensions: Vec<i32>,
-    network_data_struct: Vec<&Layer>
+    network_data_struct: Vec<Layer>
 }
 
 impl Network {
     pub fn create_network(&mut self, size: Vec<Vec<i32>>, standard_node_function: Nodefunction) {
-        // TODO: programm this, so it will create a new neural network
         self.network_data_struct = Vec::new();
 
         // call create Layer
-        for layer_size in dimensions {
-            self.network_data_struct.push(create_layer(layer_size));
+        for layer_size in self.dimensions {
+            self.network_data_struct.push(Layer::create_layer(layer_size));
         }
     }
 }
@@ -24,16 +23,16 @@ impl Network {
 
 struct Layer {
     size: i32,
-    Nodelist: Vec<&Node>,
+    Nodelist: Vec<Node>,
 }
 
 impl Layer {
     fn create_layer(&mut self, layer_size: i32) -> &Layer {
-        size = layer_size;
-        self.Layer = Vec::new()
+        self.size = layer_size;
+        self.Layer = Vec::new();
 
-        for i in (..layer_size) {
-            self.Nodelist.push(create_node());  // TODO: needs List of previous Layer for Links
+        for i in ..layer_size {
+            self.Nodelist.push(Node::create_node());  // TODO: needs List of previous Layer for Links
         }
     }
 }
@@ -44,17 +43,17 @@ enum Nodefunction {
     //standard sigmoid function
     Sigmoid,
     //for Nodes in the first Layer
-    Output_only,
+    OutputOnly,
     //for Nodes in the Last Layer
-    Input_only,
+    InputOnly,
 }
 
 struct Node {
     // all links, that are connected to this Node
-    connected_links: Vec<&Link>,
+    connected_links: Vec<Link>,
     // type of function, that is used to 
     fuction_type: Nodefunction,
-    node_output: <f32>
+    node_output: f32,
 }
 
 impl Node {
@@ -64,8 +63,8 @@ impl Node {
 
     //will return the median of all inputs (sum / number_of_items)
     fn input_sum(&self) -> f32 {
-        sum: f32;
-        for single_link in connected_links.iter() {
+        let mut sum: f32;
+        for single_link in self.connected_links {
             sum += single_link.get_link_value;
         }
         sum
@@ -75,7 +74,7 @@ impl Node {
 
 struct Link {
     weight: f32,
-    input: <Node>
+    input: &Node, // ! <-------- not working, lifetime parameter missing
 }
 
 impl Link {
@@ -85,6 +84,6 @@ impl Link {
 
     //get the value of this Link (Input * weight)
     fn get_link_value(&self) ->f32 {
-        input.node_output * weight
+        self.input.node_output * self.weight
     }
 }
