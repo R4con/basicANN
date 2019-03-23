@@ -51,13 +51,13 @@ enum Nodefunction {
 struct Node {
     // all links, that are connected to this Node
     connected_links: Vec<Link>,
-    // type of function, that is used to 
+    // type of function, that is the node uses
     fuction_type: Nodefunction,
     node_output: f32,
 }
 
 impl Node {
-    fn create_node(&self, ) { // TODO:
+    fn create_node(&self, Nodefunction) -> &Node { 
 
     }
 
@@ -78,8 +78,12 @@ struct Link {
 }
 
 impl Link {
-    fn create_Link(&self) {
+    fn create_Link(&self) -> &Link {
 
+    }
+
+    fn adjust_weight(&mut self, new_weight) {
+        self.weight = new_weight;
     }
 
     //get the value of this Link (Input * weight)
