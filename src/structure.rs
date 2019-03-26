@@ -1,22 +1,31 @@
 #![allow(non_snake_case)]
+use std::collections::HashMap;
 
-// TODO: sort file to Network::Node::Link
 //----------------------------------------------------------
 
 pub struct Network {
-    dimensions: Vec<i32>,
-    network_data_struct: Vec<Layer>
+    link_map: HashMap<((i16, i16),(i16, i16)), Link>, //((i16, i16), (i16, i16)) = ((from layer, node),(to layer, node))
+    node_struct: Vec<Layer>
 }
 
 impl Network {
-    pub fn create_network(&mut self, size: Vec<Vec<i32>>, standard_node_function: Nodefunction) {
-        self.network_data_struct = Vec::new();
+    pub fn create_network(network_size: Vec<i32>, standard_node_function: Nodefunction) -> Network {
+        let mut node_struct: Vec<Layer> = Vec::new();
+        let mut link_map: HashMap<((i16, i16),(i16, i16)), Link> = HashMap::new();  // todo add elements to hashmap
 
-        // call create Layer
-        for layer_size in self.dimensions {
-            let tmp_layer = Layer {size: layer_size, Nodelist:  };   // Todo: add Nodelist 
-            self.network_data_struct.push(tmp_layer);
+        // * Input Layer
+        node_struct.push(Layer::create_layer(&network_size[0], Nodefunction::InputOnly));
+
+        // * Hidden layers
+        for layer_size in network_size {
+            node_struct.push(Layer::create_layer(&layer_size, Nodefunction::InputOnly));
         }
+
+        // * Output Layer
+        node_struct.push(Layer::create_layer(network_size.last().expect("network_size.last() returned an error"), Nodefunction::InputOnly));
+        // ! no Links added jet
+        let ret_network: Network = Network {node_struct: network_node_struct }; // todo add hashmap as attribut
+        ret_network
     }
 }
 
@@ -28,7 +37,88 @@ struct Layer {
 }
 
 impl Layer {
-    
+    fn create_layer(size: &i32, function: Nodefunction) -> Layer {   //input_link_list: Option<Vec<Link>>
+        let mut node_list: Vec<Node> = Vec::new();
+
+        // add nodes for the first layer 
+        for i in 0..size {
+            node_list.push( Node::create_node( function, 0.0) );
+        }
+
+        let mut ret_layer: Layer = Layer {size: size.clone(), Nodelist: node_list};
+        ret_layer
+
+        // add input links, if there are any
+        /* 
+        match input_link_list {
+            Option::Some(link_vec) => {
+                for single_node in node_list.iter_mut() {
+                    single_node.add_link(link_vec)
+                }
+            }
+            Option::None => { }
+        }
+        */
+    }
+}
+
+//----------------------------------------------------------
+
+struct Node {
+    // all links, that are connected to this Node
+    connected_input_links: Option<Vec<Link>>,
+
+    // type of function, that is the node uses
+    fuction_type: Nodefunction,
+    node_output: f32,
+}
+
+impl Node {
+    //will return the median of all inputs (sum / number_of_items)
+    fn create_node(function: Nodefunction, output: f32) -> Node {
+        let mut node: Node = Node {
+            fuction_type: function,
+            node_output: output, 
+            connected_input_links: None
+        };
+        node
+    }
+
+    fn get_output_link( ) { // todo add content to method 
+
+    }
+
+    fn add_input_link(&mut self, links_to_add: Vec<Link>) {
+        self.connected_input_links = Option::Some(links_to_add);
+    }
+
+    fn input_sum(&self) -> f32 {    // ? needs Hashmap, so move to Network function
+        if let Some(Vec) = link_list {
+            let mut sum: f32;
+            for single_link in self.connected_input_links {
+                sum += single_link.get_link_value();
+            }
+            sum
+        }
+    }
+}
+
+//----------------------------------------------------------
+
+struct Link {
+    weight: f32,
+    input: ((i16,i16),(i16,i16))
+}
+
+impl Link {
+    fn adjust_weight(&mut self, new_weight: f32) {
+        self.weight = new_weight;
+    }
+
+    //get the value of this Link (Input * weight)
+    fn get_link_value(&self) ->f32 {    // ? move to Network
+        self.input.node_output * self.weight
+    }
 }
 
 //----------------------------------------------------------
@@ -41,56 +131,3 @@ enum Nodefunction {
     //for Nodes in the Last Layer
     InputOnly,
 }
-
-struct Node {
-    // all links, that are connected to this Node
-    connected_links: Vec<Link>,
-    // type of function, that is the node uses
-    fuction_type: Nodefunction,
-    node_output: f32,
-}
-
-impl Node {
-    //will return the median of all inputs (sum / number_of_items)
-    fn input_sum(&self) -> f32 {
-        let mut sum: f32;
-        for single_link in self.connected_links {
-            sum += single_link.get_link_value();
-        }
-        sum
-    }
-}
-//----------------------------------------------------------
-
-struct Link {
-    weight: f32,
-    input: &Node, // ! <-------- not working, lifetime parameter missing
-}
-
-impl Link {
-    fn adjust_weight(&mut self, new_weight: f32) {
-        self.weight = new_weight;
-    }
-
-    //get the value of this Link (Input * weight)
-    fn get_link_value(&self) ->f32 {
-        self.input.node_output * self.weight
-    }
-}
-
-
-/*
-
-fn create_node(&self, nodetype: Nodefunction) -> &Node { 
-let mut links: Vec<Link> = Vec<Link>::new();
-}
-
-fn create_layer(&self, layer_size: i32) -> Layer {
-    self.size = layer_size;
-
-    for i in ..layer_size {
-        self.Nodelist.push(Node::create_node(Nodefunction::Sigmoid));  // TODO: needs List of previous Layer for Links
-    }
-}
-
-*/
