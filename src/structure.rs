@@ -14,17 +14,27 @@ impl Network {
         let mut link_map: HashMap<((i16, i16),(i16, i16)), Link> = HashMap::new();  // todo add elements to hashmap
 
         // * Input Layer
-        node_struct.push(Layer::create_layer(&network_size[0], Nodefunction::InputOnly));
+        node_struct.push(Layer::create_layer(network_size[0], Nodefunction::InputOnly));
 
         // * Hidden layers
         for layer_size in network_size {
-            node_struct.push(Layer::create_layer(&layer_size, Nodefunction::InputOnly));
+            node_struct.push(Layer::create_layer(layer_size, Nodefunction::InputOnly));
         }
 
         // * Output Layer
-        node_struct.push(Layer::create_layer(network_size.last().expect("network_size.last() returned an error"), Nodefunction::InputOnly));
-        // ! no Links added jet
-        let ret_network: Network = Network {node_struct: network_node_struct }; // todo add hashmap as attribut
+        node_struct.push(Layer::create_layer(network_size.last().expect("network_size.last() returned an error").clone(), Nodefunction::InputOnly));
+
+        //create a Hashmap, that contains all links
+        for layer_number in 1..network_size.len() {
+            for org_node in 0..network_size[layer_number - 1] {
+                for tar_node in 0..network_size[layer_number] {
+                    link_map.insert((((layer_number -1) as i16, org_node as i16),(layer_number as i16,tar_node as i16)),
+                    Link::create_link(0.0, (((layer_number -1) as i16, org_node as i16),(layer_number as i16,tar_node as i16))));
+                }
+            }
+        }
+
+        let ret_network: Network = Network {node_struct: node_struct, link_map: link_map }; // todo add hashmap as attribut
         ret_network
     }
 }
@@ -37,7 +47,7 @@ struct Layer {
 }
 
 impl Layer {
-    fn create_layer(size: &i32, function: Nodefunction) -> Layer {   //input_link_list: Option<Vec<Link>>
+    fn create_layer(size: i32, function: Nodefunction) -> Layer {   //input_link_list: Option<Vec<Link>>
         let mut node_list: Vec<Node> = Vec::new();
 
         // add nodes for the first layer 
@@ -111,6 +121,11 @@ struct Link {
 }
 
 impl Link {
+    fn create_link(weight: f32, input: ((i16,i16),(i16,i16))) -> Link {
+        let mut ret_link: Link = Link {weight, input};
+        ret_link
+    }
+
     fn adjust_weight(&mut self, new_weight: f32) {
         self.weight = new_weight;
     }
