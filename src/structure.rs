@@ -24,7 +24,7 @@ impl Network {
             } 
             // Hiddel Layers
             else {
-                node_struct.push(Layer::create_layer(layer_size.clone(), num as i32, Nodefunction::Sigmoid)); // ? num clone useful ?
+                node_struct.push(Layer::create_layer(layer_size.clone(), num as i32, Nodefunction::Sigmoid)); //? num clone useful ?
             }
         }
         
@@ -38,22 +38,28 @@ impl Network {
             }
         }
 
-        let ret_network: Network = Network {node_struct: node_struct, link_map: link_map }; // todo add hashmap as attribut
+        let ret_network: Network = Network {node_struct: node_struct, link_map: link_map }; //? todo add hashmap as attribut
         ret_network
     }
 
     pub fn propagate_forward(&mut self) {
         for (i, layer) in self.node_struct.iter().enumerate() {
-            if node.fuction_type != Nodefunction::OutputOnly {      // todo add compare option for notefunction
-                    continue;
-            }
             for (n, node) in  layer.Nodelist.iter().enumerate() {
-                for m in self.node_struct[i-1].Nodelist.iter().enumerate() {
-                    self.link_map.get((i-1, m),(i, n)).weight;
-                    // todo do calculation
+                let mut node_output_value: f32 = 0.0;
+                let mut var_for_avrage = 0;
+
+                if node.function_type != Nodefunction::OutputOnly {      //todo add compare option for notefunction
+                    continue;
                 }
-                let node_output_value: f32 = 0.0;
-                
+                for (m, tmp) in self.node_struct[i-1].Nodelist.iter().enumerate() {
+                    let key = (( (i-1) as i16, n as i16),(i as i16,m as i16));
+                    match self.link_map.get(&key) {
+                        Some(link) => {
+                            node_output_value += link.weight * node.node_output;
+                        }
+                        None => panic!("Tried to access an not existing Link: {} {} , {} {}", String(i-1), String(n), String(i), String(m));
+                    }
+                }                
             }
         }
     }
@@ -86,7 +92,7 @@ struct Node {
     // all links, that are connected to this Node
     connected_input_links: Option<Vec<Link>>,
     // type of function, that is the node uses
-    fuction_type: Nodefunction,
+    function_type: Nodefunction,
     node_output: f32,
     node_position: (i32,i32),
 }
@@ -95,7 +101,7 @@ impl Node {
     //will return the median of all inputs (sum / number_of_items)
     fn create_node(function: Nodefunction, output: f32, position: (i32,i32)) -> Node {
         let mut node: Node = Node {
-            fuction_type: function,
+            function_type: function,
             node_output: output, 
             connected_input_links: None,
             node_position: position
@@ -103,7 +109,7 @@ impl Node {
         node
     }
 
-    fn input_sum(&self) -> f32 {    // ? needs Hashmap, so move to Network function
+    fn input_sum(&self) -> f32 {    //? needs Hashmap, so move to Network function
         if let Some(Vec) = link_list {
             let mut sum: f32;
             for single_link in self.connected_input_links {
