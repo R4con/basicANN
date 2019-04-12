@@ -3,87 +3,98 @@ use std::collections::HashMap;
 
 //----------------------------------------------------------
 
+#[derive(Debug)]
 pub struct Network {
-    link_map: HashMap<((i16, i16),(i16, i16)), Link>, //((i16, i16), (i16, i16)) = ((from layer, node),(to layer, node))
-    node_struct: Vec<Layer>
+    pub link_map: HashMap<((i16, i16),(i16, i16)), Link>, //((i16, i16), (i16, i16)) = ((from layer, node),(to layer, node))
+    pub layer_struct: Vec<Layer>
 }
 
 impl Network {
     pub fn create_network(network_size: Vec<i32>, standard_node_function: Nodefunction) -> Network {
-        let mut node_struct: Vec<Layer> = Vec::new();
+        let mut layer_struct: Vec<Layer> = Vec::new();
         let mut link_map: HashMap<((i16, i16),(i16, i16)), Link> = HashMap::new();  // todo add elements to hashmap
         
         for (num, layer_size) in network_size.iter().enumerate() {
             // Input Layer
-            if num.clone() == 0 {   
-                node_struct.push(Layer::create_layer(network_size[0], 0, Nodefunction::OutputOnly));
+            if num == 0 {   
+                layer_struct.push(Layer::create_layer(network_size[0], 0, Nodefunction::OutputOnly));
             }
             // Output Layer
-            else if num.clone() == network_size.len() -1{
-                node_struct.push(Layer::create_layer(network_size.last().expect("network_size.last() returned an error").clone(), num as i32, Nodefunction::InputOnly));
+            else if num == network_size.len() -1{
+                layer_struct.push(Layer::create_layer(network_size.last().expect("network_size.last() returned an error").clone(), num as i32, Nodefunction::InputOnly));
             } 
             // Hiddel Layers
             else {
-                node_struct.push(Layer::create_layer(layer_size.clone(), num as i32, standard_node_function.clone())); //? num clone useful ?
+                layer_struct.push(Layer::create_layer(layer_size.clone(), num as i32, standard_node_function.clone())); //? num clone useful ?
             }
         }
         
         //create a Hashmap, that contains all links
-        for layer_number in 1..network_size.len() {
-            for org_node in 0..network_size[layer_number - 1] {
-                for tar_node in 0..network_size[layer_number] {
+        for layer_number in 1..(network_size.len()) {
+            for org_node in 0..(network_size[layer_number -1]) {
+                for tar_node in 0..(network_size[layer_number]) {
                     link_map.insert(( ((layer_number -1) as i16, org_node as i16),(layer_number as i16,tar_node as i16)) ,
-                    Link::create_link(0.0) );
+                    Link::create_link(1.0) );
                 }
             }
         }
 
-        let ret_network: Network = Network {node_struct: node_struct, link_map: link_map }; //? todo add hashmap as attribut
+        let ret_network: Network = Network {layer_struct: layer_struct, link_map: link_map }; //? todo add hashmap as attribut
         ret_network
     }
 
     pub fn propagate_forward(&mut self) {
         let mut node_output_value: f32 = 0.0;
-        let mut var_for_avrage = 0;
 
-        for (i, layer) in self.node_struct.iter_mut().enumerate().skip(1) {
-            let layer_lenght = layer.Nodelist.len();
+        for i in 1..(self.layer_struct.len() -1){
+            let layer_lenght = self.layer_struct[i].Nodelist.len() - 1;
 
             // calculate all Node Outputs:
-            for (n, node) in  layer.Nodelist.iter_mut().enumerate() {
+            for (n, node) in  self.layer_struct[i-1].Nodelist.iter_mut().enumerate() {
                 for m in 0..layer_lenght {
                     let key = (( (i-1) as i16, n as i16),(i as i16, m as i16));
                     match self.link_map.get(&key) {
                         Some(link) => {
                             node_output_value += link.weight * node.node_output;
-                            var_for_avrage += 1;
                         },
-                        None => panic!("Tried to access an not existing Link: {} {} , {} {}", (i-1).to_string(), n.to_string(), i.to_string(), m.to_string()),
+                        None => panic!("Tried to get key of an not existing Link: {} {} , {} {}", (i-1).to_string(), n.to_string(), i.to_string(), m.to_string()),
                     }
                 }
-                node.node_output = node_output_value / var_for_avrage as f32;
+                print!("n: {} \n", node_output_value);  //! strange stuff happens here 
+                node.node_output = node.get_nodefunction_output(node_output_value);
+                print!("n: {} \n", node.node_output);
             }
         }
     }
 
-    pub fn get_Network_Output(&self) -> Vec<f32> {
+    pub fn set_network_Input(&mut self, new_input: Vec<f32>) {
+        if new_input.len() != self.layer_struct[0].Nodelist.len() {
+            panic!("The given input is not the same size as the Input Layer!");
+        }
+
+        for (i, item) in self.layer_struct[0].Nodelist.iter_mut().enumerate() {
+            item.node_output = new_input[i];
+        }
+    }
+
+    pub fn get_network_output(&self) -> Vec<f32> {
         let mut ret = Vec::new();
 
-        match self.node_struct.last() {
+        match self.layer_struct.last() {
             Some(item) => {
-                for i in 0..item.Nodelist.len() {
+                for i in 0..(item.Nodelist.len()) {
                     ret.push(item.Nodelist[i].node_output);
                 }
             },
-            None => panic!("The last Element in the node_struct could not be found !"),
+            None => panic!("The last Element in the layer_struct could not be found !"),
         }
         ret
     }
 }
 
 //----------------------------------------------------------
-
-struct Layer {
+#[derive(Debug)]
+pub struct Layer {
     size: i32,
     Nodelist: Vec<Node>,
 }
@@ -93,7 +104,7 @@ impl Layer {
         let mut node_list: Vec<Node> = Vec::new();
 
         // add nodes for the first layer 
-        for i in 0..size {
+        for i in 0..(size) {
             node_list.push( Node::create_node( function.clone(), 0.0, (layer_position, i)) );
         }
 
@@ -103,7 +114,7 @@ impl Layer {
 }
 
 //----------------------------------------------------------
-
+#[derive(Debug)]
 struct Node {
     // all links, that are connected to this Node
     connected_input_links: Option<Vec<Link>>,
@@ -124,11 +135,26 @@ impl Node {
         };
         node
     }
+
+    fn get_nodefunction_output(&self, input: f32) -> f32 {
+        match &self.function_type {
+            Sigmoid => 1.0/(1.0 + std::f32::consts::E.powf(-input)),
+            OutputOnly => input,
+            InputOnly => 1.0/(1.0 + std::f32::consts::E.powf(-input)),
+            ReLU => {
+                if input < 0.0 {
+                    0.0
+                } else {
+                    input
+                }
+            }
+        }
+    }
 }
 
 //----------------------------------------------------------
-
-struct Link {
+#[derive(Debug)]
+pub struct Link {
     weight: f32,
 }
 
@@ -145,7 +171,7 @@ impl Link {
 
 //----------------------------------------------------------
 
-#[derive(PartialEq, Clone)]
+#[derive(PartialEq, Clone, Debug)]
 pub enum Nodefunction {
     //standard sigmoid function
     Sigmoid,
@@ -153,4 +179,6 @@ pub enum Nodefunction {
     OutputOnly,
     //for Nodes in the Last Layer
     InputOnly,
+
+    ReLU,
 }
