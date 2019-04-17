@@ -34,7 +34,7 @@ impl Network {
             for org_node in 0..(network_size[layer_number -1]) {
                 for tar_node in 0..(network_size[layer_number]) {
                     link_map.insert(( ((layer_number -1) as i16, org_node as i16),(layer_number as i16,tar_node as i16)) ,
-                    Link::create_link(1.0) );
+                    Link::create_link(0.5) );
                 }
             }
         }
@@ -44,15 +44,14 @@ impl Network {
     }
 
     pub fn propagate_forward(&mut self) {
-        let mut node_output_value: f32 = 0.0;
-
-        for i in 1..(self.layer_struct.len() -1){
-            let layer_lenght = self.layer_struct[i].Nodelist.len() - 1;
+        for i in 1..(self.layer_struct.len() ){
+            let layer_lenght = self.layer_struct[i-1].Nodelist.len() - 1;
 
             // calculate all Node Outputs:
-            for (n, node) in  self.layer_struct[i-1].Nodelist.iter_mut().enumerate() {
+            for (n, node) in  self.layer_struct[i].Nodelist.iter_mut().enumerate() {
+                let mut node_output_value: f32 = 0.0;
                 for m in 0..layer_lenght {
-                    let key = (( (i-1) as i16, n as i16),(i as i16, m as i16));
+                    let key = (( (i-1) as i16, m as i16),(i as i16, n as i16));
                     match self.link_map.get(&key) {
                         Some(link) => {
                             node_output_value += link.weight * node.node_output;
@@ -60,10 +59,11 @@ impl Network {
                         None => panic!("Tried to get key of an not existing Link: {} {} , {} {}", (i-1).to_string(), n.to_string(), i.to_string(), m.to_string()),
                     }
                 }
-                print!("n: {} \n", node_output_value);  //! strange stuff happens here 
+                print!("{}: {} \n", n, node_output_value);  // ! strange stuff happens here 
                 node.node_output = node.get_nodefunction_output(node_output_value);
                 print!("n: {} \n", node.node_output);
             }
+            print!("-- {} -- \n", i);
         }
     }
 
