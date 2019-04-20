@@ -43,28 +43,35 @@ impl Network {
         ret_network
     }
 
-    pub fn propagate_forward(&mut self) {
-        for i in 1..(self.layer_struct.len() ){
-            let layer_lenght = self.layer_struct[i-1].Nodelist.len() - 1;
+    pub fn propagate_forward(&mut self) {   // ! works, dont touch !
+        for i in 1..(self.layer_struct.len() ) {     //layer 1 - max
+            let mut node_output_value: Vec<f32> = Vec::new();
 
-            // calculate all Node Outputs:
-            for (n, node) in  self.layer_struct[i].Nodelist.iter_mut().enumerate() {
-                let mut node_output_value: f32 = 0.0;
-                for m in 0..layer_lenght {
+            for (n, _node) in self.layer_struct[i].Nodelist.iter().enumerate() { //node 0 - max
+                node_output_value.push(0.0);
+
+                for (m, prev_node) in self.layer_struct[i-1].Nodelist.iter().enumerate() { //node 0 - max in prev layer
                     let key = (( (i-1) as i16, m as i16),(i as i16, n as i16));
+
                     match self.link_map.get(&key) {
                         Some(link) => {
-                            node_output_value += link.weight * node.node_output;
+                            node_output_value[n] += link.weight * prev_node.node_output;
                         },
                         None => panic!("Tried to get key of an not existing Link: {} {} , {} {}", (i-1).to_string(), n.to_string(), i.to_string(), m.to_string()),
                     }
                 }
-                print!("{}: {} \n", n, node_output_value);  // ! strange stuff happens here 
-                node.node_output = node.get_nodefunction_output(node_output_value);
-                print!("n: {} \n", node.node_output);
             }
-            print!("-- {} -- \n", i);
+            // node_output muss noch festgelegt werden (mit nodefunction)
+            for t in 0..node_output_value.len() {   //
+                print!("{}: {} | ", t, node_output_value[t]);
+                self.layer_struct[i].Nodelist[t].node_output = self.layer_struct[i].Nodelist[t].get_nodefunction_output(&node_output_value[t]);
+                print!("out: {} \n", self.layer_struct[i].Nodelist[t].node_output);
+            }
         }
+    }
+
+    pub fn propagate_backward(&mut self, desired_output: Vec<f32>) {
+
     }
 
     pub fn set_network_Input(&mut self, new_input: Vec<f32>) {
@@ -136,7 +143,8 @@ impl Node {
         node
     }
 
-    fn get_nodefunction_output(&self, input: f32) -> f32 {
+    fn get_nodefunction_output(&self, input: &f32) -> f32 {
+        let input: f32 = input.clone();
         match &self.function_type {
             Sigmoid => 1.0/(1.0 + std::f32::consts::E.powf(-input)),
             OutputOnly => input,

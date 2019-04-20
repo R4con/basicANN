@@ -4,9 +4,9 @@ mod structure;
 
 fn main() {
     let ANN = vec![3,5,5,3];
-    let input = vec![5f32,5f32,5f32];
+    let input = vec![1f32,1f32,1f32];
 
-    let mut new_networkt: structure::Network = structure::Network::create_network(ANN, structure::Nodefunction::Sigmoid);
+    let mut new_networkt: structure::Network = structure::Network::create_network(ANN, structure::Nodefunction::ReLU);
 
     //print!("{:?}", new_networkt.link_map);
     //print!("{:?}", new_networkt.node_struct);
