@@ -74,7 +74,7 @@ impl Network {
 
     }
 
-    pub fn set_network_Input(&mut self, new_input: Vec<f32>) {
+    pub fn set_network_Input(&mut self, new_input: Vec<f32>) {  // ? put into propagate_forward
         if new_input.len() != self.layer_struct[0].Nodelist.len() {
             panic!("The given input is not the same size as the Input Layer!");
         }
